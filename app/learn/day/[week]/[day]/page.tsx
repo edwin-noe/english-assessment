@@ -14,8 +14,9 @@ import { Button } from "@/components/ui/button"
 import { notFound } from "next/navigation"
 
 const WEEK_COLORS = ["#C14B2A", "#2A6B5A", "#4A6B8A", "#7A4A8A"]
-const PASS_PHASE = 100   // % minimum to proceed to next phase (perfect score required)
-const PASS_DAY   = 95    // % average to complete the day
+const PASS_PHASE    = 100  // % minimum to proceed to next phase (perfect score required)
+const PASS_DAY      = 95   // % average to complete the day
+const PASS_PRACTICE = 80   // % minimum practice score to unlock assessment
 
 function scoreColor(score: number) {
   if (score >= PASS_PHASE) return "#2A6B5A"
@@ -85,6 +86,16 @@ export default function DayPage({ params }: { params: Promise<{ week: string; da
   const assessScore = assessAllDone && assessAnswered.length > 0
     ? Math.round(assessCorrect.length / assessAnswered.length * 100)
     : -1
+
+  // ── Practice scoring ───────────────────────────────────────────────────────
+  const learnScorableList = learningDrills.filter(d => SCORABLE.includes(d.type))
+  const learnAnswered     = learnScorableList.filter(d => dayProgress.drills[d.id]?.isCorrect !== undefined)
+  const learnCorrect      = learnAnswered.filter(d => dayProgress.drills[d.id]?.isCorrect === true)
+  const learnScore        = allLearningDone && learnAnswered.length > 0
+    ? Math.round(learnCorrect.length / learnAnswered.length * 100)
+    : -1
+  // bypass gate for phases with no auto-scorable drills (write/speak only)
+  const practiceUnlocked  = learnScorableList.length === 0 || learnScore >= PASS_PRACTICE
 
   const latestPhaseScore   = getLatestPhaseScore(week, day, phase.id)
   const phaseScoreHistory  = getPhaseScoreHistory(week, day, phase.id)
@@ -443,30 +454,92 @@ export default function DayPage({ params }: { params: Promise<{ week: string; da
                 />
               ))}
 
-              {/* Learning complete → Take Assessment */}
+              {/* Learning complete → score gate → assessment */}
               <AnimatePresence>
-                {allLearningDone && !everPassed && (
+                {allLearningDone && !everPassed && !practiceUnlocked && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-2xl border border-[#C14B2A]/30 bg-[#FEF0EC] px-5 py-4"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle size={16} style={{ color: "#C14B2A" }} />
+                        <p className="text-sm font-[family-name:var(--font-inter)] font-bold" style={{ color: "#C14B2A" }}>
+                          Practice Score Too Low
+                        </p>
+                      </div>
+                      <span className="text-2xl font-[family-name:var(--font-playfair)] font-bold" style={{ color: "#C14B2A" }}>
+                        {learnScore}%
+                      </span>
+                    </div>
+                    <p className="text-[11px] font-[family-name:var(--font-mono)] text-[#7A6248] mb-3">
+                      {learnCorrect.length}/{learnAnswered.length} correct · Need {PASS_PRACTICE}% to unlock assessment
+                    </p>
+                    <div className="h-1.5 w-full rounded-full bg-[#D8CCBF]/50 overflow-hidden mb-3">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${learnScore}%` }}
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                        className="h-full rounded-full bg-[#C14B2A]"
+                      />
+                    </div>
+                    <Button
+                      size="sm"
+                      className="w-full border-[#C14B2A] text-[#C14B2A] hover:bg-[#FEF0EC]"
+                      variant="outline"
+                      onClick={handleRepractice}
+                    >
+                      <RefreshCw size={13} /> Re-practice
+                    </Button>
+                  </motion.div>
+                )}
+                {allLearningDone && !everPassed && practiceUnlocked && (
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="rounded-2xl border border-[#4A6B8A]/30 bg-[#EEF4FA] px-5 py-4"
                   >
-                    <div className="flex items-center gap-2 mb-2">
-                      <Trophy size={16} className="text-[#4A6B8A]" />
-                      <p className="text-sm font-[family-name:var(--font-inter)] font-bold text-[#4A6B8A]">
-                        Learning Complete!
-                      </p>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Trophy size={16} className="text-[#4A6B8A]" />
+                        <p className="text-sm font-[family-name:var(--font-inter)] font-bold text-[#4A6B8A]">
+                          Practice Passed!
+                        </p>
+                      </div>
+                      {learnScore >= 0 && (
+                        <span className="text-2xl font-[family-name:var(--font-playfair)] font-bold text-[#4A6B8A]">
+                          {learnScore}%
+                        </span>
+                      )}
                     </div>
-                    <p className="text-[11px] font-[family-name:var(--font-mono)] text-[#7A6248] mb-3">
-                      All {learningDrills.length} practice questions answered. Take the 10-question assessment to proceed.
-                    </p>
-                    <Button
-                      size="sm"
-                      className="w-full bg-[#4A6B8A] hover:bg-[#3A5A79] text-white"
-                      onClick={handleTakeAssessment}
-                    >
-                      <ClipboardList size={13} /> Take Assessment
-                    </Button>
+                    {learnScore >= 0 && (
+                      <>
+                        <p className="text-[11px] font-[family-name:var(--font-mono)] text-[#7A6248] mb-3">
+                          {learnCorrect.length}/{learnAnswered.length} correct · Assessment unlocked
+                        </p>
+                        <div className="h-1.5 w-full rounded-full bg-[#D8CCBF]/50 overflow-hidden mb-3">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${learnScore}%` }}
+                            transition={{ duration: 0.6, ease: "easeOut" }}
+                            className="h-full rounded-full bg-[#4A6B8A]"
+                          />
+                        </div>
+                      </>
+                    )}
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        size="sm"
+                        className="w-full bg-[#4A6B8A] hover:bg-[#3A5A79] text-white"
+                        onClick={handleTakeAssessment}
+                      >
+                        <ClipboardList size={13} /> Take Assessment
+                      </Button>
+                      <Button variant="outline" size="sm" className="w-full" onClick={handleRepractice}>
+                        <BookOpen size={12} /> Re-practice
+                      </Button>
+                    </div>
                   </motion.div>
                 )}
                 {allLearningDone && everPassed && (

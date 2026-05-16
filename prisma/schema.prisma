@@ -1,0 +1,87 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Represents one full assessment attempt by a user
+model Session {
+  id          String    @id @default(cuid())
+  sessionKey  String    @unique // client-generated session_id for continuity
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  answers     Answer[]
+
+  @@map("sessions")
+}
+
+// Tracks per-day learning completion
+model LearningDay {
+  id          String    @id @default(cuid())
+  userKey     String
+  week        Int
+  day         Int
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  drillAnswers DrillAnswer[]
+
+  @@unique([userKey, week, day])
+  @@index([userKey])
+  @@map("learning_days")
+}
+
+// Individual drill response within a day
+model DrillAnswer {
+  id            String      @id @default(cuid())
+  learningDayId String
+  drillId       String
+  answer        String      @db.Text
+  isCorrect     Boolean?
+  createdAt     DateTime    @default(now())
+
+  learningDay   LearningDay @relation(fields: [learningDayId], references: [id], onDelete: Cascade)
+
+  @@unique([learningDayId, drillId])
+  @@map("drill_answers")
+}
+
+// One phase attempt — score + pass/fail
+model PhaseAttempt {
+  id          String   @id @default(cuid())
+  userKey     String
+  week        Int
+  day         Int
+  phaseId     String
+  attemptNum  Int
+  score       Float
+  passed      Boolean
+  createdAt   DateTime @default(now())
+
+  @@index([userKey, week, day])
+  @@map("phase_attempts")
+}
+
+// One row per answer — upserted as the user progresses
+model Answer {
+  id         String   @id @default(cuid())
+  sessionId  String
+  questionId String   // matches Question.id in data/questions.ts
+  section    String
+  question   String
+  answer     String   @db.Text
+  type       String   // mcq | fill | essay | speaking | synonym | sentence_usage
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, questionId])
+  @@index([sessionId])
+  @@map("answers")
+}

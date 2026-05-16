@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: english_assessment_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: english_user
+      POSTGRES_PASSWORD: english_pass
+      POSTGRES_DB: english_assessment
+    ports:
+      - "5433:5432"
+    volumes:
+      - english_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U english_user -d english_assessment"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  english_postgres_data:

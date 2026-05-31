@@ -1,0 +1,33 @@
+name: CI Pipeline - Stage 1 (Lint)
+
+# When should this pipeline run?
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Download your code from GitHub into the VM
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Install Node.js v20 on the VM
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'  # Cache npm packages to speed up installs
+
+      # Step 3: Install your project dependencies
+      - name: Install dependencies
+        run: npm ci  # ci = "clean install" (better than npm install in CI)
+
+      # Step 4: Run ESLint on your code
+      - name: Run linter
+        run: npm run lint

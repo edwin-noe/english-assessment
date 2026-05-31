@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "prisma migrate deploy && next start",
-    "lint": "eslint ./app ./components --ext .js,.jsx,.ts,.tsx || true"
+    "lint": "node_modules/.bin/eslint ./app ./components --ext .js,.jsx,.ts,.tsx || true"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.2",

@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-  "dev": "next dev",
-  "build": "prisma generate && next build",
-  "start": "prisma migrate deploy && next start",
-  "lint": "eslint ./app ./components --ext .js,.jsx,.ts,.tsx || true"
-},
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "prisma migrate deploy && next start",
+    "lint": "eslint ./app ./components --ext .js,.jsx,.ts,.tsx || true"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.2",
     "@prisma/adapter-pg": "^7.8.0",

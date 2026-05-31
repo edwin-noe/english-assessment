@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { ArrowRight, CheckCircle2, Lock } from "lucide-react"
+import {CheckCircle2, ArrowRight } from 'lucide-react'
 import Link from "next/link"
 import { WEEK_TITLES, LEARNING_PLAN } from "@/data/learning-plan"
 import { useLearningStore } from "@/store/learning"

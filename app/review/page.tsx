@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { AlertCircle, ArrowLeft, Send, CheckCircle2 } from "lucide-react"
+import { AlertCircle, Send, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { questions, SECTION_ORDER } from "@/data/questions"
 import { useAssessmentStore } from "@/store/assessment"
